@@ -19,8 +19,9 @@ function connectWebSocket() {
 
     socket.onmessage = (event) => {
         let data = JSON.parse(event.data);
-        addMessage(`📩 ${data.message}`, "server-message");
+        addMessage(data.message, "server-message");  // Просто виводимо
     };
+    
 
     socket.onclose = () => {
         console.log("З'єднання закрито");
@@ -34,10 +35,12 @@ function sendMessage() {
     let message = document.getElementById("messageInput").value;
     if (message && socket) {
         socket.send(message);
-        addMessage(`Ви: ${message}`, "user-message");
         document.getElementById("messageInput").value = "";
     }
 }
+
+
+
 
 function disconnectWebSocket() {
     if (socket) {

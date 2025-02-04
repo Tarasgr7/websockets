@@ -49,16 +49,14 @@ class ConnectionManager:
         sender_name = self.usernames.get(sender_id, "")
         for client_id, connection in self.active_connections.items():
             if sender_id is None:
-                # Для системних повідомлень (підключення/відключення)
-                formatted_message = message
+                formatted_message = message  # Системні повідомлення (без змін)
             elif client_id == sender_id:
-                # Якщо це той самий користувач — відображаємо "Ви:"
-                formatted_message = f"Ви: {message}"
+                formatted_message = f"Ви: {message}"  # Для відправника
             else:
-                # Для інших показуємо його нікнейм
-                formatted_message = f"📩 {sender_name}: {message}"
+                formatted_message = f"📩 {sender_name}: {message}"  # Для інших
 
             await connection.send_json({"message": formatted_message})
+
 
 
 manager = ConnectionManager()
