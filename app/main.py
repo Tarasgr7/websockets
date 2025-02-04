@@ -7,7 +7,7 @@ from starlette.requests import Request
 
 app = FastAPI()
 
-# Додаємо підтримку CORS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,23 +16,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Додаємо шаблони та статику
+
 templates = Jinja2Templates(directory="./app/templates")
 app.mount("/static", StaticFiles(directory="./app/static"), name="static")
 
 
-# Менеджер WebSocket-з'єднань
+
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[str, WebSocket] = {}  # {client_id: connection}
-        self.usernames: dict[str, str] = {}  # {client_id: username}
+        self.active_connections: dict[str, WebSocket] = {}  #
+        self.usernames: dict[str, str] = {} 
 
     async def connect(self, websocket: WebSocket, username: str):
-        if not username.strip():  # Перевіряємо, чи є ім'я
+        if not username.strip():  
             await websocket.close()
-            return None  # Не підключаємо без імені
+            return None  
 
-        client_id = str(uuid.uuid4())  # Генеруємо унікальний ID
+        client_id = str(uuid.uuid4())  
         self.active_connections[client_id] = websocket
         self.usernames[client_id] = username
         await self.broadcast(f"📩 🟢 {username} приєднався до чату.", sender_id=None)
@@ -40,7 +40,7 @@ class ConnectionManager:
 
     async def disconnect(self, client_id: str):
         if client_id and client_id in self.active_connections:
-            username = self.usernames.pop(client_id, None)  # Видаляємо користувача
+            username = self.usernames.pop(client_id, None)  
             del self.active_connections[client_id]
             if username:
                 await self.broadcast(f"📩 🔴 {username} покинув чат.", sender_id=None)
@@ -49,12 +49,11 @@ class ConnectionManager:
         sender_name = self.usernames.get(sender_id, "")
         for client_id, connection in self.active_connections.items():
             if sender_id is None:
-                formatted_message = message  # Системні повідомлення (без змін)
+                formatted_message = message 
             elif client_id == sender_id:
-                formatted_message = f"Ви: {message}"  # Для відправника
+                formatted_message = f"Ви: {message}" 
             else:
-                formatted_message = f"📩 {sender_name}: {message}"  # Для інших
-
+                formatted_message = f"📩 {sender_name}: {message}"  
             await connection.send_json({"message": formatted_message})
 
 
@@ -64,19 +63,19 @@ manager = ConnectionManager()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()  # ✅ Приймаємо WebSocket тільки тут
+    await websocket.accept()  
 
     try:
-        data = await websocket.receive_json()  # Отримуємо ім'я користувача
+        data = await websocket.receive_json()  
         username = data.get("username", "").strip()
         client_id = await manager.connect(websocket, username)
 
-        if not client_id:  # Якщо клієнт не підключився (не вказав ім'я)
+        if not client_id:  
             return
 
         while True:
             message = await websocket.receive_text()
-            if client_id not in manager.active_connections:  # Якщо юзер вийшов — не даємо писати
+            if client_id not in manager.active_connections:
                 break
             await manager.broadcast(message, sender_id=client_id)
 
